@@ -1,0 +1,99 @@
+SET NOCOUNT ON
+SET LANGUAGE German; 
+SET DATEFORMAT ymd
+GO
+DROP TABLE if EXISTS FactSocialMedia;
+GO
+CREATE TABLE FactSocialMedia (
+    SocialMediaID INT NOT NULL,
+    PostID BIGINT NOT NULL,
+    UserID INT NOT NULL,
+    PostDateKey INT NOT NULL,
+    Likes INT NOT NULL,
+    Shares INT NOT NULL,
+    Comments INT NOT NULL,
+    ValidFrom DATETIME2 NOT NULL,
+    ValidTo DATETIME2 NOT NULL,
+    BatchID INT NOT NULL
+);
+-- Here the maggic of performance happens
+CREATE CLUSTERED COLUMNSTORE INDEX CCI_FactSocialMedia ON FactSocialMedia;
+GO
+
+DROP TABLE if EXISTS DimComment;
+GO
+CREATE TABLE DimComment (
+    CommentID BIGINT NOT NULL,
+    PostID BIGINT NOT NULL,
+    UserID INT NOT NULL,
+    CommentDateKey INT NOT NULL,
+    CommentText NVARCHAR(MAX) NOT NULL,
+    ValidFrom DATETIME2 NOT NULL,
+    ValidTo DATETIME2 NOT NULL,
+    BatchID INT NOT NULL
+);
+CREATE UNIQUE INDEX FT_CommentID ON DimComment (CommentID ASC);
+
+if (select 1 from sys.fulltext_catalogs where name = N'ftCatalog') = NULL
+	BEGIN
+        CREATE FULLTEXT CATALOG ftCatalog AS DEFAULT
+    END
+
+if (SELECT 1 FROM sys.fulltext_indexes where object_id = OBJECT_ID('DimComment')) = NULL
+BEGIN
+    CREATE FULLTEXT INDEX ON DimComment (CommentText) 
+    KEY INDEX [FT_CommentID]
+    WITH STOPLIST = SYSTEM
+END;
+
+DROP TABLE if EXISTS Batch;
+GO
+CREATE TABLE Batch (
+    BatchID INT IDENTITY(1,1) PRIMARY KEY,
+    Operation VARCHAR(50) NOT NULL,
+    Credentials VARCHAR(50) NOT NULL,
+    Operator VARCHAR(50) NOT NULL,
+    Result VARCHAR(50) NOT NULL,
+    Success BIT NOT NULL,
+    [Start] DATETIME2 NOT NULL DEFAULT(SYSUTCDATETIME()),
+    [End] DATETIME2 NULL
+);
+
+DROP TABLE if EXISTS DimPost;
+GO
+CREATE TABLE DimPost (
+    PostID BIGINT NOT NULL PRIMARY KEY,
+    SocialMediaID INT NOT NULL,
+    UserID INT NOT NULL,
+    PostDateKey INT NOT NULL,
+    CommentID BIGINT NOT NULL,
+    ValidFrom DATETIME2 NOT NULL DEFAULT(SYSUTCDATETIME()),
+    ValidTo DATETIME2 NOT NULL,
+    BatchID INT NOT NULL
+);
+
+DROP TABLE if EXISTS DimUser;
+GO
+CREATE TABLE DimUser (
+    UserID INT NOT NULL PRIMARY KEY,
+    UserName NVARCHAR(50) NOT NULL,
+    UserEmail NVARCHAR(50) NOT NULL,
+    UserLocation NVARCHAR(50) NOT NULL,
+    ValidFrom DATETIME2 NOT NULL DEFAULT(SYSUTCDATETIME()),
+    ValidTo DATETIME2 NOT NULL,
+    BatchID INT NOT NULL
+);
+
+
+DROP TABLE IF EXISTS DimSocialMedia;
+GO
+
+CREATE TABLE DimSocialMedia (
+    SocialMediaID INT NOT NULL PRIMARY KEY,
+    Name NVARCHAR(50) NOT NULL,
+    URL NVARCHAR(256) NOT NULL,
+    ValidFrom DATETIME2 NOT NULL DEFAULT(SYSUTCDATETIME()),
+    ValidTo DATETIME2 NOT NULL,
+    BatchID INT NOT NULL
+);
+GO
