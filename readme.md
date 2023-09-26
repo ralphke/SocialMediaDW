@@ -4,7 +4,8 @@
 
 This is a sample implementaion for a SQL-Server 2022 Datawarehouse to support Social Media Analytics is a scalable fashion.
 To make this work, ensure the database is running in compatibility mode 160
-The 01_Create Database Instance.sql contains the nessesary configuration changes
+The 01_Create Database Instance.sql contains the nessesary configuration changes. Make sure to execute this script with SQLCMD mode active in SQL Server Management Studio or use (go)-SQLCMD for processing.
+
 
 ## Background
 
