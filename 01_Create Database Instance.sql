@@ -6,6 +6,22 @@
 */
 :setvar DBNAME "SocialMediaDW"
 :on error exit
+GO
+/*
+Detect SQLCMD mode and disable script execution if SQLCMD mode is not supported.
+To re-enable the script after enabling SQLCMD mode, execute the following:
+SET NOEXEC OFF; 
+*/
+:setvar __IsSqlCmdEnabled "True"
+GO
+IF N'$(__IsSqlCmdEnabled)' NOT LIKE N'True'
+    BEGIN
+        PRINT N'SQLCMD mode must be enabled to successfully execute this script.';
+        SET NOEXEC ON;
+    END
+
+
+GO
 use master
 GO
 IF (SELECT 1 from sys.databases where [name] = N'$(DBNAME)') = 1
